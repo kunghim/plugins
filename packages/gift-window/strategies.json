@@ -1,0 +1,91 @@
+[
+  {
+    "name": "gift-first: a gift seat goes ahead of the others, listed order kept",
+    "strategy": "gift-first",
+    "pool": "group/auto-glm-5-3-flash",
+    "seats": [
+      { "key": "loomy", "account": true, "known": true, "used": 4 },
+      { "key": "zcode", "account": true, "known": true, "used": 0 },
+      { "key": "workbuddy", "account": true, "known": true, "used": 0 }
+    ],
+    "expect": ["zcode", "loomy", "workbuddy"]
+  },
+  {
+    "name": "gift-first: the prefix matches per-account keys too (zcode@…)",
+    "strategy": "gift-first",
+    "seats": [
+      { "key": "loomy", "known": true, "used": 0 },
+      { "key": "zcode@kunghimxu@gmail.com", "known": true, "used": 0.3 },
+      { "key": "trae-cn", "known": true, "used": 33 }
+    ],
+    "expect": ["zcode@kunghimxu@gmail.com", "loomy", "trae-cn"]
+  },
+  {
+    "name": "gift-first: several gift seats keep their listed order among themselves",
+    "strategy": "gift-first",
+    "seats": [
+      { "key": "zcode@b", "known": true, "used": 9 },
+      { "key": "loomy", "known": true, "used": 0 },
+      { "key": "zcode@a", "known": true, "used": 0 }
+    ],
+    "expect": ["zcode@b", "zcode@a", "loomy"]
+  },
+  {
+    "name": "gift-first: no gift seat, the listed order stands",
+    "strategy": "gift-first",
+    "seats": [
+      { "key": "workbuddy", "known": true, "used": 37 },
+      { "key": "loomy", "known": true, "used": 0 },
+      { "key": "trae-cn", "known": true, "used": 33 }
+    ],
+    "expect": ["workbuddy", "loomy", "trae-cn"]
+  },
+  {
+    "name": "gift-first: a resting gift seat goes last, after everyone up",
+    "strategy": "gift-first",
+    "seats": [
+      { "key": "zcode", "known": true, "used": 0, "resting": true },
+      { "key": "loomy", "known": true, "used": 50 },
+      { "key": "workbuddy", "known": true, "used": 1 }
+    ],
+    "expect": ["loomy", "workbuddy", "zcode"]
+  },
+  {
+    "name": "gift-first: a resting seat among the others still goes last",
+    "strategy": "gift-first",
+    "seats": [
+      { "key": "workbuddy", "known": true, "used": 0, "resting": true },
+      { "key": "loomy", "known": true, "used": 50 }
+    ],
+    "expect": ["loomy", "workbuddy"]
+  },
+  {
+    "name": "gift-first: the options set another prefix",
+    "strategy": "gift-first",
+    "options": { "prefix": "minimax" },
+    "seats": [
+      { "key": "zcode", "known": true, "used": 0 },
+      { "key": "minimax-code", "known": true, "used": 80 }
+    ],
+    "expect": ["minimax-code", "zcode"]
+  },
+  {
+    "name": "gift-first: an empty prefix matches nothing",
+    "strategy": "gift-first",
+    "options": { "prefix": "" },
+    "seats": [
+      { "key": "zcode", "known": true, "used": 0 },
+      { "key": "loomy", "known": true, "used": 90 }
+    ],
+    "expect": ["zcode", "loomy"]
+  },
+  {
+    "name": "gift-first: keys magpie fills in (seat-N) match no prefix, order stands",
+    "strategy": "gift-first",
+    "seats": [
+      { "account": true, "known": true, "used": 10 },
+      { "account": true, "known": true, "used": 20 }
+    ],
+    "expect": [0, 1]
+  }
+]
