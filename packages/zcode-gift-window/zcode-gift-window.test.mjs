@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import * as mod from "./gift-window.gateway.js"
+import * as mod from "./zcode-gift-window.gateway.js"
 import { checkStrategies, order } from "../../scripts/middleware.mjs"
 
 checkStrategies(import.meta.dir, mod)

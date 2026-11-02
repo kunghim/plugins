@@ -1,0 +1,18 @@
+{
+  "name": "@magpie-community/middleware-zcode-gift-window",
+  "version": "0.1.0",
+  "description": "A routing for magpie's gateway that puts ZCode's gift seats (accounts serving a model only while a daily activity token bucket is live) first while they are offered, keeping the listed order otherwise",
+  "type": "module",
+  "files": ["zcode-gift-window.gateway.js", "README.md"],
+  "keywords": ["magpie", "magpie-middleware", "magpie-routing", "routing", "zcode", "llm-gateway"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/magpie-community/plugins.git",
+    "directory": "packages/zcode-gift-window"
+  },
+  "magpie": {
+    "gateway": "./zcode-gift-window.gateway.js",
+    "options": { "prefix": "zcode" }
+  }
+}

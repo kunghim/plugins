@@ -1,6 +1,6 @@
-// Routings that follow a provider's gift windows, for a provider's accounts
-// and keys or a group's members. magpie offers each as gift-window/<name> in
-// every routing picker while the plugin is on.
+// Routings that follow ZCode's gift windows, for a provider's accounts
+// and keys or a group's members. magpie offers each as zcode-gift-window/<name>
+// in every routing picker while the plugin is on.
 //
 // A strategy is given the pool's name, its seats and this plugin's options,
 // and returns the order to try the seats in, as indexes. Each seat has key,
