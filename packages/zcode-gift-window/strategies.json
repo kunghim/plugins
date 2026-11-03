@@ -87,5 +87,73 @@
       { "account": true, "known": true, "used": 20 }
     ],
     "expect": [0, 1]
+  },
+  {
+    "name": "drain-then-sink: the listed order stands while no allowance is spent",
+    "strategy": "drain-then-sink",
+    "seats": [
+      { "key": "a", "known": true, "used": 12 },
+      { "key": "b", "known": true, "used": 80 },
+      { "key": "c", "known": true, "used": 0 }
+    ],
+    "expect": ["a", "b", "c"]
+  },
+  {
+    "name": "drain-then-sink: a spent seat goes after everyone with allowance",
+    "strategy": "drain-then-sink",
+    "seats": [
+      { "key": "a", "known": true, "used": 100 },
+      { "key": "b", "known": true, "used": 50 }
+    ],
+    "expect": ["b", "a"]
+  },
+  {
+    "name": "drain-then-sink: the options' cap sets where spent starts",
+    "strategy": "drain-then-sink",
+    "options": { "cap": 90 },
+    "seats": [
+      { "key": "a", "known": true, "used": 90 },
+      { "key": "b", "known": true, "used": 89 }
+    ],
+    "expect": ["b", "a"]
+  },
+  {
+    "name": "drain-then-sink: a resting seat goes last, spent or not",
+    "strategy": "drain-then-sink",
+    "seats": [
+      { "key": "a", "known": true, "used": 10, "resting": true },
+      { "key": "b", "known": true, "used": 100 },
+      { "key": "c", "known": true, "used": 20 }
+    ],
+    "expect": ["c", "b", "a"]
+  },
+  {
+    "name": "drain-then-sink: an allowance not known is not spent",
+    "strategy": "drain-then-sink",
+    "seats": [
+      { "key": "a", "known": false, "used": 0 },
+      { "key": "b", "known": true, "used": 100 }
+    ],
+    "expect": ["a", "b"]
+  },
+  {
+    "name": "drain-then-sink: spent seats keep their listed order",
+    "strategy": "drain-then-sink",
+    "seats": [
+      { "key": "a", "known": true, "used": 100 },
+      { "key": "b", "known": true, "used": 100 },
+      { "key": "c", "known": true, "used": 1 }
+    ],
+    "expect": ["c", "a", "b"]
+  },
+  {
+    "name": "drain-then-sink: a cap that isn't a share is 100",
+    "strategy": "drain-then-sink",
+    "options": { "cap": "lots" },
+    "seats": [
+      { "key": "a", "known": true, "used": 100 },
+      { "key": "b", "known": true, "used": 99.9 }
+    ],
+    "expect": ["b", "a"]
   }
 ]
