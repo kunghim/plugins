@@ -54,7 +54,7 @@ export function decide(observed, state, groups) {
   }
   if (observed === false && cur === "gift") {
     // 有→无：恢复
-    return { next: { version: 1, mode: "user", saved: {}, savedAt: new Date().toISOString() }, actions: groups.map((g) => ({ kind: "restore", group: g, to: state?.saved?.[g] ?? null, save: () => ({ version: 1, mode: "user", saved: {}, savedAt: new Date().toISOString() }) })) }
+    return { next: null, actions: groups.map((g) => ({ kind: "restore", group: g, to: state?.saved?.[g] ?? null, save: () => ({ version: 1, mode: "user", saved: {}, savedAt: new Date().toISOString() }) })) }
   }
   // 其余：无变化。observed=null（查询全失败）绝不触发动作。
   return { next: state && { ...state, version: 1 }, actions: [] }
