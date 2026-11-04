@@ -4,6 +4,7 @@
 // 注意：宿主会把模块导出的每个函数都当插件函数调（check.mjs 约定），
 // 所以内部函数一律不导出。
 import { join } from "node:path"
+import { alreadyServing } from "./probe.mjs"
 
 const DEFAULT_PORT = 3493
 const TICK_MS = 5 * 60_000
@@ -17,7 +18,10 @@ export default {
   server: async (_input, opts = {}) => {
     const port = Number(opts?.port)
     const listen = Number.isFinite(port) && port > 0 ? port : DEFAULT_PORT
+    // 进程内已起，或端口上有带本插件标记的旧实例（上次宿主退出没来得及收口）——都不重开。
+    // 旧实例跑的是同一份代码，功能照常；这里硬启动只会撞 "port in use" 让 magpie 记一次失败。
     if (instances.has(listen)) return {}
+    if (await alreadyServing(listen)) return {}
     const instance = start(listen, opts).catch((e) => {
       instances.delete(listen)
       throw e
