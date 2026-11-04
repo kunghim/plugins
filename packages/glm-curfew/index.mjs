@@ -68,9 +68,10 @@ async function start(port, opts) {
     runtime.lastObserved = obs === null ? null : obs.active
     runtime.gifts = obs?.gifts ?? []
     const state = await st.load()
-    const { next, actions } = decide(runtime.lastObserved, state, groups)
+    const { actions } = decide(runtime.lastObserved, state, groups)
     if (actions.length) {
       const done = []
+      const saved = { ...(state?.saved ?? {}) }
       for (const a of actions) {
         try {
           const r = await perform(a, {
@@ -78,16 +79,22 @@ async function start(port, opts) {
             setRouting: (g, v) => setRouting(magpieBin, g, v, log),
             giftRouting,
           })
+          saved[a.group] = r.saved
           done.push(r)
           log(`${a.kind} ${a.group}: ${JSON.stringify(r)}`)
         } catch (e) {
           log(`action failed ${a.kind} ${a.group}: ${e?.message ?? e}`)
         }
       }
-      next.lastAction = { at: new Date().toISOString(), kind: actions[0].kind, results: done }
-      // 只有全部动作成功才落新状态；有失败保持旧状态，下轮重试
-      if (done.length === actions.length) await st.save(next)
-      else log("state kept for retry")
+      // 只有全部动作成功才落新状态；有失败保持旧状态，下轮重试。
+      // 新状态由动作自带的 save(saved) 构造（带 version:1，load() 才认）。
+      if (done.length === actions.length) {
+        const next = typeof actions[0].save === "function" ? actions[0].save(saved) : null
+        if (next) {
+          next.lastAction = { at: new Date().toISOString(), kind: actions[0].kind, results: done }
+          await st.save(next)
+        }
+      } else log("state kept for retry")
     }
     runtime.nextTickAt = new Date(Date.now() + TICK_MS).toISOString()
   }

@@ -50,14 +50,14 @@ export function decide(observed, state, groups) {
   const cur = state?.mode ?? null
   if (observed === true && cur !== "gift") {
     // 无→有：记住各组当前值，切到礼包模式
-    return { next: { mode: "gift", saved: {}, savedAt: new Date().toISOString() }, actions: groups.map((g) => ({ kind: "gift", group: g })) }
+    return { next: null, actions: groups.map((g) => ({ kind: "gift", group: g, save: (saved) => ({ version: 1, mode: "gift", saved, savedAt: new Date().toISOString() }) })) }
   }
   if (observed === false && cur === "gift") {
     // 有→无：恢复
-    return { next: { mode: "user", saved: {}, savedAt: new Date().toISOString() }, actions: groups.map((g) => ({ kind: "restore", group: g, to: state?.saved?.[g] ?? null })) }
+    return { next: { version: 1, mode: "user", saved: {}, savedAt: new Date().toISOString() }, actions: groups.map((g) => ({ kind: "restore", group: g, to: state?.saved?.[g] ?? null, save: () => ({ version: 1, mode: "user", saved: {}, savedAt: new Date().toISOString() }) })) }
   }
   // 其余：无变化。observed=null（查询全失败）绝不触发动作。
-  return { next: state, actions: [] }
+  return { next: state && { ...state, version: 1 }, actions: [] }
 }
 
 /**

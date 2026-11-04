@@ -37,28 +37,36 @@ describe("liveGiftsOf", () => {
 
 describe("decide 边沿", () => {
   const groups = ["g1", "g2"]
-  test("无→有：切礼包并清空 saved", () => {
-    const st = { mode: "user", saved: { g1: "order" }, savedAt: "t0" }
+  test("无→有：动作带 save()，落盘后 mode=gift 且 saved 由执行结果填", () => {
+    const st = { version: 1, mode: "user", saved: { g1: "order" }, savedAt: "t0" }
     const { next, actions } = decide(true, st, groups)
-    expect(next.mode).toBe("gift")
-    expect(actions).toEqual([
-      { kind: "gift", group: "g1" },
-      { kind: "gift", group: "g2" },
-    ])
+    expect(next).toBe(null)
+    expect(actions.map((a) => a.group)).toEqual(["g1", "g2"])
+    expect(actions.every((a) => a.kind === "gift" && typeof a.save === "function")).toBe(true)
+    const file = actions[0].save({ g1: "order", g2: null })
+    expect(file.mode).toBe("gift")
+    expect(file.version).toBe(1)
+    expect(file.saved.g1).toBe("order")
   })
-  test("有→无：恢复各组记录的原值", () => {
-    const st = { mode: "gift", saved: { g1: "order", g2: null }, savedAt: "t1" }
+  test("有→无：restore 动作带原值与 save()", () => {
+    const st = { version: 1, mode: "gift", saved: { g1: "order", g2: null }, savedAt: "t1" }
     const { next, actions } = decide(false, st, groups)
-    expect(next.mode).toBe("user")
+    expect(next).toBe(null)
     expect(actions).toEqual([
-      { kind: "restore", group: "g1", to: "order" },
-      { kind: "restore", group: "g2", to: null },
+      { kind: "restore", group: "g1", to: "order", save: expect.any(Function) },
+      { kind: "restore", group: "g2", to: null, save: expect.any(Function) },
     ])
+    const file = actions[0].save({})
+    expect(file.mode).toBe("user")
+    expect(file.version).toBe(1)
   })
   test("期间反复观测不变：零动作（不覆盖用户调整）", () => {
     for (const obs of [true, true, false, false]) {
-      const st = obs ? { mode: "gift", saved: {} } : { mode: "user", saved: {} }
-      expect(decide(obs, st, groups).actions).toEqual([])
+      const st = obs ? { version: 1, mode: "gift", saved: {} } : { version: 1, mode: "user", saved: {} }
+      const { actions, next } = decide(obs, st, groups)
+      expect(actions).toEqual([])
+      expect(next.version).toBe(1)
+      expect(next.mode).toBe(obs ? "gift" : "user")
     }
   })
   test("观测未知（null，查询全失败）：绝不动作", () => {
@@ -71,8 +79,9 @@ describe("decide 边沿", () => {
   })
   test("首次启动观测有礼包：也切（礼包模式是既定语义）", () => {
     const { next, actions } = decide(true, null, groups)
-    expect(next.mode).toBe("gift")
+    expect(next).toBe(null)
     expect(actions).toHaveLength(2)
+    expect(typeof actions[0].save).toBe("function")
   })
 })
 
