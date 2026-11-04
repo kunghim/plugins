@@ -1,6 +1,6 @@
 // glm-curfew 宿主入口：magpie 调 server() 时启动本地服务与调度器。
 // 单纯 import 不占端口不占定时器（对齐 window-warmup 的单例约定）。
-// 数据目录：GLM_CURFEW_DIR 优先，否则 <magpie 配置目录>/glm-curfew。
+// 状态目录：<magpie 配置目录>/glm-curfew（index 与 deps 共用 magpieConfigDir，勿自拼）
 // 注意：宿主会把模块导出的每个函数都当插件函数调（check.mjs 约定），
 // 所以内部函数一律不导出。
 import { join } from "node:path"
@@ -11,16 +11,6 @@ const TIMER_CAP_MS = 10 * 60_000
 
 /** 端口 → 启动中的服务；按端口分键 */
 const instances = new Map()
-
-function defaultDir(env = process.env, moduleDir = import.meta.dir) {
-  const custom = env.GLM_CURFEW_DIR?.trim()
-  if (custom) return custom
-  // 与 deps.mjs 的 magpieConfigDir 同判定：plugins 目录的上级
-  const seg = moduleDir.split(/[\\/]/).filter(Boolean)
-  const i = seg.lastIndexOf("plugins")
-  if (i > 0) return join("/", ...seg.slice(0, i), "glm-curfew")
-  return join(env.XDG_CONFIG_HOME ?? "", "magpie", "glm-curfew")
-}
 
 export default {
   id: "magpie-glm-curfew",
@@ -45,7 +35,8 @@ async function start(port, opts) {
   ])
   const env = process.env
   const configDir = magpieConfigDir(env)
-  const dir = defaultDir(env)
+  // 状态文件直接放 magpie 配置目录下（与 deps.mjs 的 store 用同一拼法，勿再自拼）
+  const dir = configDir
   const st = store(dir)
   const groups = Array.isArray(opts.groups) && opts.groups.length ? opts.groups.map(String) : ["auto-glm-5-3-flash", "auto-glm-5-3"]
   const giftRouting = typeof opts.giftRouting === "string" && opts.giftRouting ? opts.giftRouting : "zcode-gift-window/gift-first"
