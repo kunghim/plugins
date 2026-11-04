@@ -68,7 +68,16 @@ async function start(port, opts) {
     runtime.lastObserved = obs === null ? null : obs.active
     runtime.gifts = obs?.gifts ?? []
     const state = await st.load()
-    const { actions } = decide(runtime.lastObserved, state, groups)
+    // 每轮记录「非礼包模式」的现值 —— 这是用户自己的配置，切换时哪怕现状已是礼包模式也能记起该恢复成什么
+    const known = { ...(state?.known ?? {}) }
+    for (const g of groups) {
+      const cur = await getRouting(configDir, g)
+      if (cur && cur !== giftRouting) known[g] = cur
+    }
+    const { next: idle, actions } = decide(runtime.lastObserved, state, groups, known)
+    if (!actions.length && idle && JSON.stringify(idle) !== JSON.stringify(state)) {
+      await st.save(idle) // known 的变化落盘
+    }
     if (actions.length) {
       const done = []
       const saved = { ...(state?.saved ?? {}) }

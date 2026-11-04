@@ -84,6 +84,23 @@ describe("decide 边沿", () => {
     expect(actions).toHaveLength(2)
     expect(typeof actions[0].save).toBe("function")
   })
+  test("现状已是礼包模式但 known 有历史用户值：saved 用 known 兜底（可恢复）", async () => {
+    const { actions } = decide(true, { version: 1, mode: "user", saved: {}, known: { g1: "order" } }, groups, { g1: "order" })
+    const r = await perform(actions[0], {
+      giftRouting: "zcode-gift-window/gift-first",
+      getRouting: async () => "zcode-gift-window/gift-first", // 现状已是礼包模式
+      setRouting: async () => {
+        throw new Error("should not write")
+      },
+    })
+    expect(r.saved).toBe("order") // ← 不再是 null，恢复有据可依
+  })
+  test("known 值随 tick 落盘（mode 稳定时也会保存）", () => {
+    const st = { version: 1, mode: "user", saved: {}, savedAt: null, known: {} }
+    const { next, actions } = decide(false, st, groups, { g1: "smart" })
+    expect(actions).toEqual([])
+    expect(next.known.g1).toBe("smart")
+  })
 })
 
 describe("perform（注入假件）", () => {

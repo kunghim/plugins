@@ -40,24 +40,45 @@ export function liveGiftsOf(balanceData, now = Date.now()) {
 }
 
 /**
- * 一次 tick 的决策：给定当前观测（giftActive）与已存状态，返回要执行的动作序列。
- * 纯函数 —— 动作由调用方执行；执行结果再由 persist 落盘。
+ * 一次 tick 的决策：给定当前观测（giftActive）、已存状态与已知的用户值，返回要执行的动作序列。
  *
- * state: { mode: "user" | "gift" | null, saved: Record<groupId, string>, savedAt: iso }
- *   mode=null 表示插件还没介入过（首次启动/状态丢失）
+ * state: { version, mode, saved, savedAt, known }
+ *   known —— 每次 tick 观测到的「非礼包模式」值（持久），用于在切换瞬间当前值已经是
+ *   礼包模式时（上一轮恢复没做成、状态丢失、用户手动设成礼包模式）仍能记起该恢复成什么。
  */
-export function decide(observed, state, groups) {
+export function decide(observed, state, groups, known = {}) {
   const cur = state?.mode ?? null
   if (observed === true && cur !== "gift") {
-    // 无→有：记住各组当前值，切到礼包模式
-    return { next: null, actions: groups.map((g) => ({ kind: "gift", group: g, save: (saved) => ({ version: 1, mode: "gift", saved, savedAt: new Date().toISOString() }) })) }
+    return {
+      next: null,
+      actions: groups.map((g) => ({
+        kind: "gift",
+        group: g,
+        fallback: known?.[g] ?? state?.saved?.[g] ?? null,
+        save: (saved) => ({ version: 1, mode: "gift", saved, savedAt: new Date().toISOString(), known: { ...known } }),
+      })),
+    }
   }
   if (observed === false && cur === "gift") {
-    // 有→无：恢复
-    return { next: null, actions: groups.map((g) => ({ kind: "restore", group: g, to: state?.saved?.[g] ?? null, save: () => ({ version: 1, mode: "user", saved: {}, savedAt: new Date().toISOString() }) })) }
+    return {
+      next: null,
+      actions: groups.map((g) => ({
+        kind: "restore",
+        group: g,
+        to: state?.saved?.[g] ?? known?.[g] ?? null,
+        save: () => ({ version: 1, mode: "user", saved: {}, savedAt: new Date().toISOString(), known: { ...known } }),
+      })),
+    }
   }
   // 其余：无变化。observed=null（查询全失败）绝不触发动作。
-  return { next: state && { ...state, version: 1 }, actions: [] }
+  const same = state?.mode === "gift" || state?.mode === "user"
+  if (!same) return { next: state && { ...state, version: 1 }, actions: [] }
+  // mode 已稳定：把 known 的更新顺带落盘（非礼包值时记录用户配置）
+  const changed = JSON.stringify(known) !== JSON.stringify(state?.known ?? {})
+  if (changed) {
+    return { next: { version: 1, mode: state.mode, saved: { ...(state.saved ?? {}) }, savedAt: state.savedAt ?? null, known: { ...known }, lastAction: state.lastAction ?? null }, actions: [] }
+  }
+  return { next: state, actions: [] }
 }
 
 /**
@@ -71,7 +92,8 @@ export function decide(observed, state, groups) {
 export async function perform(action, deps) {
   const cur = await deps.getRouting(action.group)
   if (action.kind === "gift") {
-    const saved = cur && cur !== deps.giftRouting ? cur : null
+    // 当前值已经是礼包模式时无法从现状记原值，退回 fallback（历史已知的用户值）
+    const saved = cur && cur !== deps.giftRouting ? cur : action.fallback ?? null
     if (cur !== deps.giftRouting) await deps.setRouting(action.group, deps.giftRouting)
     return { group: action.group, saved, set: deps.giftRouting, skipped: cur === deps.giftRouting }
   }
