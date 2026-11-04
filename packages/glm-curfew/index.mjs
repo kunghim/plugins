@@ -117,10 +117,7 @@ async function start(port, opts) {
   // 首轮立即跑（启动即对齐现状）
   tick().catch((e) => log(`first tick error: ${e?.message ?? e}`))
 
-  const json = (res, code, body) => {
-    res.writeHead(code ?? 200, { "content-type": "application/json; charset=utf-8", "x-glm-curfew": "1" })
-    res.end(JSON.stringify(body ?? {}))
-  }
+  const json = (body, code = 200) => new Response(JSON.stringify(body ?? {}), { status: code, headers: { "content-type": "application/json; charset=utf-8", "x-glm-curfew": "1" } })
 
   const server = Bun.serve({
     port,
@@ -128,7 +125,7 @@ async function start(port, opts) {
       const url = new URL(req.url)
       if (url.pathname === "/status") {
         const s = await st.load()
-        return json(req, 200, {
+        return json({
           paused: runtime.paused,
           lastObserved: runtime.lastObserved,
           gifts: runtime.gifts,
@@ -145,18 +142,18 @@ async function start(port, opts) {
       if (url.pathname === "/pause" && req.method === "POST") {
         runtime.paused = true
         log("paused")
-        return json(req, 200, { paused: true })
+        return json({ paused: true })
       }
       if (url.pathname === "/resume" && req.method === "POST") {
         runtime.paused = false
         log("resumed")
-        return json(req, 200, { paused: false })
+        return json({ paused: false })
       }
       if (url.pathname === "/tick" && req.method === "POST") {
         await tick()
-        return json(req, 200, { ok: true })
+        return json({ ok: true })
       }
-      return json(req, 404, { error: "not found" })
+      return json({ error: "not found" }, 404)
     },
   })
 
