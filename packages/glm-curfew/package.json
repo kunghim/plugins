@@ -1,0 +1,30 @@
+{
+  "name": "@magpie-community/page-glm-curfew",
+  "version": "0.1.0",
+  "description": "按 ZCode 礼包的真实生效状态（effective_at ≤ now < ends_at）自动切换指定路由分组的 routing：礼包生效才切、过期自动恢复、没发礼包绝不碰配置。Switch routing groups to a gift mode while a ZCode gift is actually in force, and back when it ends.",
+  "author": "kunghim",
+  "type": "module",
+  "license": "MIT",
+  "main": "index.mjs",
+  "files": ["index.mjs", "page", "README.md"],
+  "keywords": ["magpie", "magpie-page", "zcode", "routing", "llm-gateway"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/magpie-community/plugins.git",
+    "directory": "packages/glm-curfew"
+  },
+  "magpie": {
+    "page": {
+      "title": "GLM Curfew",
+      "titles": { "zh": "GLM 礼包宵禁" },
+      "file": "page/index.html",
+      "service": { "port": 3493, "option": "port" },
+      "icon": "page/icon.svg"
+    },
+    "options": {
+      "port": 3493,
+      "groups": ["auto-glm-5-3-flash", "auto-glm-5-3"],
+      "giftRouting": "zcode-gift-window/gift-first"
+    }
+  }
+}

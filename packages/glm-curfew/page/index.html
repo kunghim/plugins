@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>GLM Curfew</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 24px; background: #111318; color: #d6d6dd; }
+  h1 { font-size: 18px; } code, pre { background: #1b1e26; border-radius: 6px; }
+  pre { padding: 10px; overflow: auto; font-size: 12px; }
+  .card { background: #171a21; border: 1px solid #262b36; border-radius: 10px; padding: 14px; margin: 10px 0; }
+  button { background: #2b3140; color: #d6d6dd; border: 1px solid #3a4152; border-radius: 8px; padding: 6px 14px; cursor: pointer; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 99px; margin-left: 8px; font-size: 12px; }
+  .on { background: #1d3326; color: #7fd694; } .off { background: #3a2730; color: #e08a97; } .na { background: #2b3140; color: #9aa2b1; }
+</style>
+</head>
+<body>
+<h1>GLM Curfew <span id="mode" class="badge na">…</span></h1>
+<div class="card" id="obs"></div>
+<div class="card" id="state"></div>
+<div class="card">
+  <button onclick="fetch('/pause',{method:'POST'}).then(refresh)">暂停</button>
+  <button onclick="fetch('/resume',{method:'POST'}).then(refresh)">恢复</button>
+  <button onclick="fetch('/tick',{method:'POST'}).then(refresh)">立即判定一次</button>
+</div>
+<pre id="logs"></pre>
+<script>
+async function refresh() {
+  const s = await (await fetch('/status')).json()
+  const m = document.getElementById('mode')
+  m.textContent = s.paused ? '已暂停' : s.state.mode === 'gift' ? '礼包模式' : s.state.mode === 'user' ? '用户模式' : '未介入'
+  m.className = 'badge ' + (s.paused ? 'na' : s.state.mode === 'gift' ? 'on' : 'off')
+  document.getElementById('obs').innerHTML =
+    `<b>观测</b>：lastObserved=${s.lastObserved} · 下次判定 ${s.nextTickAt ?? '—'}<br>` +
+    (s.gifts && s.gifts.length
+      ? s.gifts.map(g => `&nbsp;&nbsp;礼包：${g.account} · ${g.plan} · ${g.model} · ${g.grant} · 到 ${new Date(g.endsAt).toLocaleString()}`).join('<br>')
+      : '&nbsp;&nbsp;当前无生效礼包')
+  document.getElementById('state').innerHTML =
+    `<b>状态</b>：<code>${JSON.stringify(s.state, null, 1)}</code><br>` +
+    `<b>目标分组</b>：${s.groups.join('、')} → ${s.giftRouting}`
+  document.getElementById('logs').textContent = (s.logs ?? []).join('\n')
+}
+refresh(); setInterval(refresh, 30000)
+</script>
+</body>
+</html>

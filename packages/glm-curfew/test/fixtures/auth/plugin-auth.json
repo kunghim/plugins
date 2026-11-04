@@ -1,0 +1,6 @@
+{
+  "zcode": { "type": "oauth", "accountId": "ZCode", "refresh": "{\"jwt\":\"eyJhbGciOiJ1dGVzdC5hIn0.eyJzdWIiOiIxIn0.sig\", \"device\": \"dev-1\"}" },
+  "zcode#lewu7a": { "type": "oauth", "accountId": "是微尘呀", "refresh": "{\"jwt\":\"eyJhbGciOiJ1dGVzdC5iIn0.x.y\", \"device\": \"dev-2\"}" },
+  "zcode#m2inyt": { "type": "oauth", "accountId": "nojwt", "refresh": "{\"site\":\"bigmodel\"}" },
+  "workbuddy": { "type": "oauth", "accountId": "other", "refresh": "{\"jwt\":\"should-not-be-read\"}" }
+}
