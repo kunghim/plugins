@@ -59,6 +59,7 @@ describe("decide 边沿", () => {
     const file = actions[0].save({})
     expect(file.mode).toBe("user")
     expect(file.version).toBe(1)
+    expect(file.saved).toEqual({})
   })
   test("期间反复观测不变：零动作（不覆盖用户调整）", () => {
     for (const obs of [true, true, false, false]) {
