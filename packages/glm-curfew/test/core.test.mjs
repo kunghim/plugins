@@ -5,29 +5,33 @@ const NOW = Date.parse("2026-11-03T23:30:00+08:00")
 const s = (iso) => Date.parse(iso) / 1000
 
 describe("giftLive", () => {
-  const live = { grant_units: 3e8, effective_at: s("2026-11-03T23:00:00+08:00"), ends_at: s("2026-11-04T09:00:00+08:00") }
-  test("生效区间内为真", () => expect(giftLive(live, NOW)).toBe(true))
+  // 实证（2026-11-04）：生效时刻在 entitlement.effective_at，失效时刻在 plan.ends_at
+  const plan = { name: "ZCODE GLOBAL BUILD", status: "active", ends_at: s("2026-11-04T09:00:00+08:00") }
+  const live = { grant_units: 3e8, effective_at: s("2026-11-03T23:00:00+08:00") }
+  test("生效区间内为真", () => expect(giftLive(plan, live, NOW)).toBe(true))
   test("生效前（到账未生效）为假", () => {
     const arrived = { ...live, effective_at: s("2026-11-03T23:30:01+08:00") } // now < effective
-    expect(giftLive(arrived, NOW)).toBe(false)
+    expect(giftLive(plan, arrived, NOW)).toBe(false)
   })
-  test("过期后为假", () => expect(giftLive(live, Date.parse("2026-11-04T09:00:00+08:00"))).toBe(false))
-  test("小额不算礼包（1e8 下限）", () => expect(giftLive({ ...live, grant_units: 5e6 }, NOW)).toBe(false))
-  test("字段缺失为假", () => expect(giftLive({ grant_units: 3e8 }, NOW)).toBe(false))
+  test("过期后为假", () => expect(giftLive(plan, live, Date.parse("2026-11-04T09:00:00+08:00"))).toBe(false))
+  test("小额不算礼包（1e8 下限）", () => expect(giftLive(plan, { ...live, grant_units: 5e6 }, NOW)).toBe(false))
+  test("字段缺失为假", () => expect(giftLive(plan, { grant_units: 3e8 }, NOW)).toBe(false))
+  test("plan 缺 ends_at 为假", () => expect(giftLive({ status: "active" }, live, NOW)).toBe(false))
 })
 
 describe("liveGiftsOf", () => {
   test("跨 plan 汇总生效礼包；非 active 的 plan 跳过", () => {
     const d = {
       plans: [
-        { name: "A", status: "active", entitlements: [{ grant_units: 3e8, effective_at: s("2026-11-03T23:00:00+08:00"), ends_at: s("2026-11-04T09:00:00+08:00"), capabilities: ["model:glm-5.3-flash"] }] },
-        { name: "B", status: "expired", entitlements: [{ grant_units: 3e8, effective_at: 0, ends_at: s("2026-11-05T09:00:00+08:00"), capabilities: ["model:x"] }] },
+        { name: "A", status: "active", ends_at: s("2026-11-04T09:00:00+08:00"), entitlements: [{ grant_units: 3e8, effective_at: s("2026-11-03T23:00:00+08:00"), capabilities: ["model:glm-5.3-flash"] }] },
+        { name: "B", status: "expired", ends_at: s("2026-11-05T09:00:00+08:00"), entitlements: [{ grant_units: 3e8, effective_at: 0, capabilities: ["model:x"] }] },
       ],
     }
     const got = liveGiftsOf(d, NOW)
     expect(got).toHaveLength(1)
     expect(got[0].plan).toBe("A")
     expect(got[0].model).toBe("model:glm-5.3-flash")
+    expect(got[0].endsAt).toBe(s("2026-11-04T09:00:00+08:00") * 1000)
   })
 })
 

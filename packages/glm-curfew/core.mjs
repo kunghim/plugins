@@ -8,13 +8,15 @@
 // 3. 边沿触发：只在 无→有 跳变时切一次；有→无 时恢复记录的用户配置
 // 4. 全部住在 magpie 进程内，无外部定时器
 
-/** 一条 entitlement 是否构成"正在生效的大额礼包" */
-export function giftLive(ent, now = Date.now()) {
-  if (!ent || typeof ent !== "object") return false
+/** 一条 (plan, entitlement) 是否构成"正在生效的大额礼包"。
+ * 生效时刻在 entitlement.effective_at；失效时刻在 plan.ends_at（entitlement 上没有 ends_at——
+ * 2026-11-04 对真实接口实证，effective 23:00 / plan ends 次日 09:00） */
+export function giftLive(plan, ent, now = Date.now()) {
+  if (!plan || !ent || typeof ent !== "object") return false
   const grant = Number(ent.grant_units)
   if (!Number.isFinite(grant) || grant < 1e8) return false
   const eff = secToMs(ent.effective_at)
-  const end = secToMs(ent.ends_at)
+  const end = secToMs(plan.ends_at)
   if (eff === null || end === null) return false
   return eff <= now && now < end
 }
@@ -31,7 +33,7 @@ export function liveGiftsOf(balanceData, now = Date.now()) {
   for (const p of Array.isArray(balanceData?.plans) ? balanceData.plans : []) {
     if (String(p?.status ?? "").toLowerCase() !== "active") continue
     for (const e of Array.isArray(p?.entitlements) ? p.entitlements : []) {
-      if (giftLive(e, now)) out.push({ plan: String(p?.name ?? ""), model: e?.capabilities?.[0] ?? "", grant: Number(e?.grant_units), endsAt: secToMs(e?.ends_at) })
+      if (giftLive(p, e, now)) out.push({ plan: String(p?.name ?? ""), model: e?.capabilities?.[0] ?? "", grant: Number(e?.grant_units), endsAt: secToMs(p?.ends_at) })
     }
   }
   return out
